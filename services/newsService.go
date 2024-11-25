@@ -23,7 +23,7 @@ func NewNewsService() *NewsService {
 }
 
 func (ns *NewsService) FetchNewsByTopic(topic string) ([]models.Article, error) {
-	
+
 	err := godotenv.Load()
 	if err != nil {
 		return nil, errors.New("failed to load environment variables")
@@ -49,23 +49,23 @@ func (ns *NewsService) FetchNewsByTopic(topic string) ([]models.Article, error) 
 
 	return newsResponse.Articles, nil
 }
-func (ns *NewsService) SendEmails(users []models.User, news []models.Article)map[string] string{
+func (ns *NewsService) SendEmails(users []models.User, news []models.Article) map[string]string {
 	status := make(map[string]string)
-	statusCh := make(chan map[string]string,len(users)) 
-	var mu sync.Mutex   
-	var wg sync.WaitGroup 
+	statusCh := make(chan map[string]string, len(users))
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 	for _, user := range users {
 		wg.Add(1)
 		go func(email string) {
 			defer wg.Done()
-			
+
 			body := "Here are the top news articles:\n\n"
 			for i, article := range news {
-				if i>=5{
-					break;
+				if i >= 5 {
+					break
 				}
 				body += fmt.Sprintf("Title: %s\nDescription: %s\nURL: %s\n\n", article.Title, article.Description, article.URL)
-				
+
 			}
 			err := SendEmail(email, "Weekly Newsletter", body)
 			statusUpdate := make(map[string]string)
@@ -78,18 +78,18 @@ func (ns *NewsService) SendEmails(users []models.User, news []models.Article)map
 			statusCh <- statusUpdate
 		}(user.Email)
 	}
-    go func() {
-        
-        wg.Wait()
-        close(statusCh) 
-    }()
-   for update := range statusCh {
-        mu.Lock()
-        for k, v := range update {
-            status[k] = v
-        }
-        mu.Unlock()
-    }
+	go func() {
+
+		wg.Wait()
+		close(statusCh)
+	}()
+	for update := range statusCh {
+		mu.Lock()
+		for k, v := range update {
+			status[k] = v
+		}
+		mu.Unlock()
+	}
 
 	log.Println("Email sending status:")
 	for email, emailStatus := range status {
@@ -114,14 +114,12 @@ func SendEmail(to, subject, body string) error {
 	_, err := client.Send(message)
 	if err != nil {
 		log.Printf("Failed to send email to %s: %v", to, err)
-		return err 
+		return err
 	}
-	
 
-	return nil 
+	return nil
 }
-func (ns *NewsService) GetUsers()([]models.User,error){
-	userService:=NewUserService()
+func (ns *NewsService) GetUsers() ([]models.User, error) {
+	userService := NewUserService()
 	return userService.GetAllUsers()
 }
-

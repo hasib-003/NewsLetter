@@ -1,10 +1,10 @@
 package services
 
 import (
-	"github.com/hasib-003/newsLetter/models"
 	"log"
-)
 
+	"github.com/hasib-003/newsLetter/models"
+)
 
 type UserService struct{}
 
@@ -13,7 +13,7 @@ func NewUserService() *UserService {
 }
 
 func (us *UserService) RegisterUser(email, name, password string) (models.User, error) {
-	
+
 	user, err := models.CreateUser(email, name, password)
 	if err != nil {
 		log.Println("Error in service layer:", err)
@@ -21,11 +21,11 @@ func (us *UserService) RegisterUser(email, name, password string) (models.User, 
 	}
 	return user, nil
 }
-func (us *UserService) GetAllUsers()([]models.User,error){
-	users,err:=models.GetAllUsers()
-	if err!=nil{
-		log.Println("Error in service layer:",err)
-		return nil,err
+func (us *UserService) GetAllUsers() ([]models.User, error) {
+	users, err := models.GetAllUsers()
+	if err != nil {
+		log.Println("Error in service layer:", err)
+		return nil, err
 	}
-	return users,nil
+	return users, nil
 }

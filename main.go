@@ -7,16 +7,13 @@ import (
 )
 
 func main() {
-	// Connect to PostgreSQL
+
 	config.ConnectDB()
 
-	// Set up Gin router
 	r := gin.Default()
 
-	// Register routes
 	routes.RegisterUserRoutes(r)
 	routes.RegisterNewsRoutes(r)
 
-	// Start the server
 	r.Run(":8080")
 }

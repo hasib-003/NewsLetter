@@ -1,8 +1,9 @@
 package models
 
 import (
-	"github.com/hasib-003/newsLetter/config"
 	"log"
+
+	"github.com/hasib-003/newsLetter/config"
 )
 
 type User struct {
@@ -42,7 +43,6 @@ func GetAllUsers() ([]User, error) {
 		}
 		users = append(users, user)
 	}
-
 
 	return users, nil
 }

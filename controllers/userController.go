@@ -1,15 +1,15 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/hasib-003/newsLetter/services"
-	"net/http"
 )
 
 type UserController struct {
 	UserService *services.UserService
 }
-
 
 func NewUserController(userService *services.UserService) *UserController {
 	return &UserController{
