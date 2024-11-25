@@ -116,7 +116,6 @@ func SendEmail(to, subject, body string) error {
 		log.Printf("Failed to send email to %s: %v", to, err)
 		return err
 	}
-
 	return nil
 }
 func (ns *NewsService) GetUsers() ([]models.User, error) {
