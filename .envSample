@@ -1,0 +1,9 @@
+DB_USER=postgres
+DB_PASSWORD=Password
+DB_NAME=newsLetter
+DB_HOST=localhost
+DB_PORT=5432
+DB_SSLMODE=disable
+NEWS_API_KEY=NewsApiKey
+SENDGRID_API_KEY=sendgridApiKey
+SENDER_EMAIL=SenderEmail@exaple.com
