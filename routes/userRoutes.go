@@ -12,4 +12,5 @@ func RegisterUserRoutes(r *gin.Engine) {
 	userController := controllers.NewUserController(userService)
 
 	r.POST("/register", userController.RegisterUser)
+	r.GET("/GetAUser",userController.GetAUser)
 }

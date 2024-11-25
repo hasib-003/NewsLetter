@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/hasib-003/newsLetter/config"
@@ -45,4 +46,17 @@ func GetAllUsers() ([]User, error) {
 	}
 
 	return users, nil
+}
+func GetAUser(email string)(User,error){
+	query:=`SELECT id,name,password FROM users WHERE email=$1`
+	var user User
+	err := config.DB.QueryRow(query, email).Scan(&user.ID, &user.Name, &user.Password)
+	if err!=nil{
+		if err == sql.ErrNoRows {
+			log.Printf("No user found with email: %s", email)
+			return User{}, nil 
+		}
+		log.Printf("Error Fetching User:%v",err)
+	}
+	return user,nil
 }

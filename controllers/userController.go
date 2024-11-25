@@ -41,3 +41,14 @@ func (ctrl *UserController) RegisterUser(c *gin.Context) {
 		"name":  user.Name,
 	})
 }
+func (ctrl *UserController) GetAUser(c *gin.Context){
+	email:=c.Query("email")
+	if email==""{
+		c.JSON(http.StatusBadRequest,gin.H{"error":"Email is required"})
+	}
+	user,err:=ctrl.UserService.GetAUser(email)
+	if err!=nil{
+		c.JSON(http.StatusInternalServerError,gin.H{"error":"Failed to fetch User "})
+	}
+	c.JSON(http.StatusOK,user)
+}

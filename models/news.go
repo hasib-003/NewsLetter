@@ -1,13 +1,11 @@
 package models
 
-// NewsResponse represents the structure of the API response
 type NewsResponse struct {
 	Status       string    `json:"status"`
 	TotalResults int       `json:"totalResults"`
 	Articles     []Article `json:"articles"`
 }
 
-// Article represents a single news article
 type Article struct {
 	Source struct {
 		Name string `json:"name"`

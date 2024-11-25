@@ -29,3 +29,11 @@ func (us *UserService) GetAllUsers() ([]models.User, error) {
 	}
 	return users, nil
 }
+func (us *UserService) GetAUser(email string)(models.User,error){
+	user,err :=models.GetAUser(email)
+	if err!=nil{
+		log.Println("Error in service layer ",err)
+		return user,err
+	}
+	return user,nil
+}
