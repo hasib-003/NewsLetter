@@ -2,15 +2,20 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/hasib-003/newsLetter/config"
 	"github.com/hasib-003/newsLetter/controllers"
 	"github.com/hasib-003/newsLetter/services"
 )
 
 func RegisterNewsRoutes(r *gin.Engine) {
+	db := config.GetDB() 
+	newsService := services.NewNewsService(db)
+	newsController := controllers.NewNewsController(newsService)
 
-	newsService := services.NewNewsService()
-	NewsController := controllers.NewNewsController(newsService)
+	r.GET("/news", newsController.FetchNewsByTopic)
+	r.GET("/send-email", newsController.SendEmails)
+	r.GET("/topics/:id", newsController.GetNewsByTopicID)
+	r.POST("subscribe",newsController.SubscribeToTopic)
+	r.POST("/subscribed-topics", newsController.GetSubscribedTopics)
 
-	r.GET("/news", NewsController.GetNews)
-	r.GET("/send-email", NewsController.SendEmails)
 }

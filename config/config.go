@@ -1,15 +1,16 @@
 package config
 
 import (
-	"database/sql"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-var DB *sql.DB
+var DB *gorm.DB
 
 func ConnectDB() {
 	err := godotenv.Load()
@@ -27,15 +28,25 @@ func ConnectDB() {
 	connStr := "user=" + dbUser + " password=" + dbPassword + " dbname=" + dbName +
 		" host=" + dbHost + " port=" + dbPort + " sslmode=" + dbSSLMode
 
-	DB, err = sql.Open("postgres", connStr)
+	
+	DB, err = gorm.Open(postgres.Open(connStr), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Error connecting to the database:", err)
 	}
 
-	err = DB.Ping()
+	// Test the connection by pinging the database
+	sqlDB, err := DB.DB() // Get the underlying *sql.DB object
+	if err != nil {
+		log.Fatal("Error obtaining the DB instance:", err)
+	}
+
+	err = sqlDB.Ping() // Test the connection with Ping
 	if err != nil {
 		log.Fatal("Error pinging database:", err)
 	}
 
 	log.Println("Database connection successful")
+}
+func GetDB() *gorm.DB {
+	return DB
 }

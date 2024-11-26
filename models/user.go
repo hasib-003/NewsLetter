@@ -1,62 +1,63 @@
 package models
 
 import (
-	"database/sql"
 	"log"
 
 	"github.com/hasib-003/newsLetter/config"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
+	gorm.Model
+	Email    string `gorm:"unique"`
+	Name     string
+	Password string
+}
+
+type Topic struct {
+	gorm.Model
+	Name        string 
+	Description string
+}
+
+type Subscription struct {
+	gorm.Model
+	UserID  uint
+	TopicID uint
+	 User    User   `gorm:"foreignKey:UserID"`
+	Topic   Topic  `gorm:"foreignKey:TopicID"`
 }
 
 func CreateUser(email, name, password string) (User, error) {
 
-	query := `INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id, email, name, password`
-	var user User
-	err := config.DB.QueryRow(query, email, name, password).Scan(&user.ID, &user.Email, &user.Name, &user.Password)
-	if err != nil {
+	user := User{
+		Email:    email,
+		Name:     name,
+		Password: password,
+	}
+	if err := config.DB.Create(&user).Error; err != nil {
 		log.Println("Error inserting user:", err)
 		return user, err
 	}
 	return user, nil
 }
 func GetAllUsers() ([]User, error) {
-	query := `SELECT id, email, name, password FROM users`
-	rows, err := config.DB.Query(query)
-	if err != nil {
+	var users []User
+	if err := config.DB.Find(&users).Error; err != nil {
 		log.Println("Error fetching users:", err)
 		return nil, err
 	}
-	defer rows.Close()
-
-	var users []User
-	for rows.Next() {
-		var user User
-		err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.Password)
-		if err != nil {
-			log.Println("Error scanning user:", err)
-			return nil, err
-		}
-		users = append(users, user)
-	}
-
 	return users, nil
 }
 func GetAUser(email string)(User,error){
-	query:=`SELECT id,name,password FROM users WHERE email=$1`
 	var user User
-	err := config.DB.QueryRow(query, email).Scan(&user.ID, &user.Name, &user.Password)
-	if err!=nil{
-		if err == sql.ErrNoRows {
+	if err := config.DB.Where("email = ?", email).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
 			log.Printf("No user found with email: %s", email)
-			return User{}, nil 
+			return user, nil
 		}
-		log.Printf("Error Fetching User:%v",err)
+		log.Printf("Error fetching user: %v", err)
+		return user, err
 	}
-	return user,nil
+	return user, nil
 }

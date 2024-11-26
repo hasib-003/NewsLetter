@@ -12,7 +12,7 @@ func StartScheduler() {
 	
 	s := gocron.NewScheduler(time.UTC)
 
-	s.Every(1).Minute().Do(func() {
+	s.Every(100).Minute().Do(func() {
 		resp, err := http.Get("http://localhost:8080/getAllUsers")
 		if err != nil {
 			log.Printf("Error hitting /getAllUsers route: %v", err)
