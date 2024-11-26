@@ -3,8 +3,6 @@ package controllers
 import (
 	"net/http"
 	"strconv"
-
-	"github.com/hasib-003/newsLetter/models"
 	"github.com/hasib-003/newsLetter/services"
 
 	"github.com/gin-gonic/gin"
@@ -83,45 +81,35 @@ func (nc *NewsController) SubscribeToTopic(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully subscribed to topic"})
 }
 func (nc *NewsController) GetSubscribedTopics(c *gin.Context) {
-	var request struct {
-		UserID uint `json:"user_id"`
-	}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	userIDStr := c.Param("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
 		return
 	}
 
-	var subscriptions []models.Subscription
-	err := nc.NewsService.DB.Where("user_id = ?", request.UserID).Find(&subscriptions).Error
+	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching subscriptions"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id"})
+		return
+	}
+	topics, err := nc.NewsService.GetSubscribedTopics(uint(userID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	var topics []models.Topic
-	for _, sub := range subscriptions {
-		var topic models.Topic
-		err := nc.NewsService.DB.First(&topic, sub.TopicID).Error
-		if err != nil {
-			continue
-		}
-		topics = append(topics, topic)
-	}
-
+	// Respond with the subscribed topics
 	c.JSON(http.StatusOK, gin.H{"subscribed_topics": topics})
+
 }
+
 
 func (nc *NewsController) SendEmails(c *gin.Context) {
 	users, err := nc.NewsService.GetUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 	}
-	news, err := nc.NewsService.FetchNewsByTopic("technology")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch news"})
-	}
-
-	status := nc.NewsService.SendEmails(users, news)
+	status := nc.NewsService.SendEmails(users)
 	c.JSON(http.StatusOK, gin.H{"message": "Emails are being sent", "status": status})
 }

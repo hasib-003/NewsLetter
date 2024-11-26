@@ -18,45 +18,45 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type NewsService struct{DB *gorm.DB}
+type NewsService struct{ DB *gorm.DB }
 
 func NewNewsService(db *gorm.DB) *NewsService {
 	return &NewsService{DB: db}
 }
 
-func (ns *NewsService) FetchNewsByTopic(topic string)  ([]models.Article, error) {
+func (ns *NewsService) FetchNewsByTopic(topic string) ([]models.Article, error) {
 
 	err := godotenv.Load()
 	if err != nil {
-		return nil,errors.New("failed to load environment variables")
+		return nil, errors.New("failed to load environment variables")
 	}
 
 	apiKey := os.Getenv("NEWS_API_KEY")
 	if apiKey == "" {
-		return  nil,errors.New("API key is missing")
+		return nil, errors.New("API key is missing")
 	}
 
 	url := fmt.Sprintf("https://newsapi.org/v2/everything?q=%s&apiKey=%s", topic, apiKey)
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return  nil,errors.New("failed to fetch news")
+		return nil, errors.New("failed to fetch news")
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Error reading API response: %v", err)
-		return nil,errors.New("failed to read API response")
+		return nil, errors.New("failed to read API response")
 	}
 
 	var newsResponse models.NewsResponse
 	if err := json.Unmarshal(body, &newsResponse); err != nil {
 		log.Printf("Error parsing news response: %v", err)
-		return nil,errors.New("failed to parse news response")
+		return nil, errors.New("failed to parse news response")
 	}
 
 	for i, article := range newsResponse.Articles {
-		if i>5{
+		if i > 5 {
 			break
 		}
 		topicEntry := models.Topic{
@@ -65,12 +65,13 @@ func (ns *NewsService) FetchNewsByTopic(topic string)  ([]models.Article, error)
 		}
 		if err := ns.DB.Create(&topicEntry).Error; err != nil {
 			log.Printf("Error saving topic to database: %v", err)
-			return nil,err
+			return nil, err
 		}
-		
-	}
 
-	return  newsResponse.Articles,nil
+	}
+	
+
+	return newsResponse.Articles, nil
 }
 func (ns *NewsService) GetNewsByTopicID(topicID uint) ([]models.Topic, error) {
 	var topics []models.Topic
@@ -89,36 +90,19 @@ func (ns *NewsService) GetTopicsByName(topicName string) ([]models.Topic, error)
 	}
 	return topics, nil
 }
-// func (ns *NewsService) SubscribeUserToTopic(userID uint, topicName string) error {
-// 	var topic models.Topic
-// 	err := ns.DB.Where("name = ?", topicName).First(&topic).Error
-// 	if err != nil && err != gorm.ErrRecordNotFound {
-// 		return fmt.Errorf("error checking for topic: %v", err)
-// 	}
 
-// 	subscription := models.Subscription{
-// 		UserID:  userID,
-// 		TopicID: topic.ID,
-// 	}
-// 	if err := ns.DB.Create(&subscription).Error; err != nil {
-// 		return fmt.Errorf("error creating subscription: %v", err)
-// 	}
-// 	return nil
-// }
 func (ns *NewsService) SubscribeUserToTopic(userID uint, topicName string) error {
-	// Find all topics with the same name
+
 	var topics []models.Topic
 	err := ns.DB.Where("name = ?", topicName).Find(&topics).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("error fetching topics by name: %v", err)
 	}
 
-	// If no topics found, return an error
 	if len(topics) == 0 {
 		return fmt.Errorf("no topics found with the name: %s", topicName)
 	}
 
-	// Create subscription for each topic found
 	for _, topic := range topics {
 		subscription := models.Subscription{
 			UserID:  userID,
@@ -131,35 +115,85 @@ func (ns *NewsService) SubscribeUserToTopic(userID uint, topicName string) error
 
 	return nil
 }
+func (ns *NewsService) GetSubscribedTopics(userID uint) ([]models.Topic, error) {
+	
+	var subscriptions []models.Subscription
+	err := ns.DB.Where("user_id = ?", userID).Find(&subscriptions).Error
+	if err != nil {
+		return nil, fmt.Errorf("error fetching subscriptions: %v", err)
+	}
 
-func (ns *NewsService) SendEmails(users []models.User, news []models.Article) map[string]string {
+	var topics []models.Topic
+	for _, sub := range subscriptions {
+		var topic models.Topic
+		err := ns.DB.First(&topic, sub.TopicID).Error
+		if err != nil {
+			continue
+		}
+		topics = append(topics, topic)
+	}
+
+	return topics, nil
+}
+
+
+func (ns *NewsService) SendEmails(users []models.User) map[string]string {
 	status := make(map[string]string)
 	statusCh := make(chan map[string]string, len(users))
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for _, user := range users {
 		wg.Add(1)
-		go func(email string) {
+		go func(user models.User) {
 			defer wg.Done()
 
+			var subscriptions []models.Subscription
+			err := ns.DB.Where("user_id = ?", user.ID).Find(&subscriptions).Error
+			if err != nil {
+				log.Printf("Error fetching subscriptions for user %s: %v", user.Email, err)
+				statusCh <- map[string]string{user.Email: "Failed to fetch subscriptions"}
+				return
+			}
+
+			var userNews []models.Topic
+			for _, subscription := range subscriptions {
+				var topic models.Topic
+				err := ns.DB.First(&topic, subscription.TopicID).Error
+				if err != nil {
+					log.Printf("Error fetching topic for subscription: %v", err)
+					continue
+				}
+				userNews = append(userNews, topic)
+				// for _, article := range userNews {
+				// 	if article.Name == topic.Name {
+				// 		userNews = append(userNews, article)
+				// 	}
+				// }
+			}
+			// 	if len(userNews) > 5 {
+			// 	userNews = userNews[:5]
+			// }
+			log.Printf("User %s subscribed to these topics: %v", user.Email, userNews)
+
 			body := "Here are the top news articles:\n\n"
-			for i, article := range news {
-				if i >= 5 {
+			for i, article := range userNews {
+				if i>20{
 					break
 				}
-				body += fmt.Sprintf("Title: %s\nDescription: %s\n", article.Title, article.Description)
+				body += fmt.Sprintf("Title: %s\nDescription: %s\n", article.Name, article.Description)
+				
 
 			}
-			err := SendEmail(email, "Weekly Newsletter", body)
+			err = SendEmail(user.Email, "Weekly Newsletter", body)
 			statusUpdate := make(map[string]string)
 			if err != nil {
-				log.Printf("Error sending email to %s: %v", email, err)
-				statusUpdate[email] = "Failed"
+				log.Printf("Error sending email to %s: %v", user.Email, err)
+				statusUpdate[user.Email] = "Failed"
 			} else {
-				statusUpdate[email] = "Success"
+				statusUpdate[user.Email] = "Success"
 			}
 			statusCh <- statusUpdate
-		}(user.Email)
+		}(user)
 	}
 	go func() {
 
