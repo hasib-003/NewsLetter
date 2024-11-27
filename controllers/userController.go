@@ -79,3 +79,22 @@ func (uc *UserController) SubscribeToTopic(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully subscribed to topic"})
 }
+func (uc *UserController) UnsubscribeFromTopic(c *gin.Context) {
+	var request struct {
+		UserID    uint   `json:"user_id"`
+		TopicName string `json:"topic_name"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	err := uc.UserService.UnsubscribeUserFromTopic(request.UserID, request.TopicName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully unsubscribed from topic"})
+}

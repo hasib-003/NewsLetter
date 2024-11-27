@@ -81,7 +81,6 @@ func (nc *NewsController) GetSubscribedTopics(c *gin.Context) {
 		return
 	}
 
-	// Respond with the subscribed topics
 	c.JSON(http.StatusOK, gin.H{"subscribed_topics": topics})
 
 }

@@ -63,3 +63,25 @@ func (us *UserService) SubscribeUserToTopic(userID uint, topicName string) error
 
 	return nil
 }
+func (us *UserService) UnsubscribeUserFromTopic(userID uint, topicName string) error {
+
+	var topics []models.Topic
+	err := us.DB.Where("name = ?", topicName).Find(&topics).Error
+	if err != nil {
+		return fmt.Errorf("error fetching topics by name: %v", err)
+	}
+
+	if len(topics) == 0 {
+		return fmt.Errorf("no topics found with the name: %s", topicName)
+	}
+
+	for _, topic := range topics {
+		err := us.DB.Where("user_id = ? AND topic_id = ?", userID, topic.ID).Delete(&models.Subscription{}).Error
+		if err != nil {
+			return fmt.Errorf("error unsubscribing from topic %s: %v", topic.Name, err)
+		}
+	}
+
+	return nil
+}
+

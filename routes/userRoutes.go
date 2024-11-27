@@ -16,4 +16,6 @@ func RegisterUserRoutes(r *gin.Engine) {
 	r.GET("/getAllUsers",userController.GetAllUsers)
 	r.GET("/getAUser",userController.GetAUser)
 	r.POST("/subscribe",userController.SubscribeToTopic)
+	r.POST("/unsubscribe", userController.UnsubscribeFromTopic)
+
 }

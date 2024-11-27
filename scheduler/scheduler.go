@@ -12,15 +12,17 @@ func StartScheduler() {
 	
 	s := gocron.NewScheduler(time.UTC)
 
-	s.Every(2).Minute().Do(func() {
+	time.AfterFunc(20*time.Minute,func() {
+		s.Every(20).Minute().Do(func() {
 		resp, err := http.Get("http://localhost:8080/send-email")
 		if err != nil {
-			log.Printf("Error hitting /getAllUsers route: %v", err)
+			log.Printf("Error hitting /send-email route: %v", err)
 			return
 		}
 		defer resp.Body.Close()
-		log.Printf("Hit /getAllUsers route. Status: %s", resp.Status)
+		log.Printf("Hit /send-email route. Status: %s", resp.Status)
 	})
 
 	s.StartAsync()
+	})
 }
