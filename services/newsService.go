@@ -91,30 +91,6 @@ func (ns *NewsService) GetTopicsByName(topicName string) ([]models.Topic, error)
 	return topics, nil
 }
 
-func (ns *NewsService) SubscribeUserToTopic(userID uint, topicName string) error {
-
-	var topics []models.Topic
-	err := ns.DB.Where("name = ?", topicName).Find(&topics).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return fmt.Errorf("error fetching topics by name: %v", err)
-	}
-
-	if len(topics) == 0 {
-		return fmt.Errorf("no topics found with the name: %s", topicName)
-	}
-
-	for _, topic := range topics {
-		subscription := models.Subscription{
-			UserID:  userID,
-			TopicID: topic.ID,
-		}
-		if err := ns.DB.Create(&subscription).Error; err != nil {
-			return fmt.Errorf("error creating subscription for topic %s: %v", topic.Name, err)
-		}
-	}
-
-	return nil
-}
 func (ns *NewsService) GetSubscribedTopics(userID uint) ([]models.Topic, error) {
 	
 	var subscriptions []models.Subscription
@@ -135,8 +111,6 @@ func (ns *NewsService) GetSubscribedTopics(userID uint) ([]models.Topic, error) 
 
 	return topics, nil
 }
-
-
 func (ns *NewsService) SendEmails(users []models.User) map[string]string {
 	status := make(map[string]string)
 	statusCh := make(chan map[string]string, len(users))
@@ -164,16 +138,8 @@ func (ns *NewsService) SendEmails(users []models.User) map[string]string {
 					continue
 				}
 				userNews = append(userNews, topic)
-				// for _, article := range userNews {
-				// 	if article.Name == topic.Name {
-				// 		userNews = append(userNews, article)
-				// 	}
-				// }
+
 			}
-			// 	if len(userNews) > 5 {
-			// 	userNews = userNews[:5]
-			// }
-			log.Printf("User %s subscribed to these topics: %v", user.Email, userNews)
 
 			body := "Here are the top news articles:\n\n"
 			for i, article := range userNews {
@@ -236,6 +202,6 @@ func SendEmail(to, subject, body string) error {
 	return nil
 }
 func (ns *NewsService) GetUsers() ([]models.User, error) {
-	userService := NewUserService()
+	userService := NewUserService(ns.DB)
 	return userService.GetAllUsers()
 }

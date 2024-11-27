@@ -61,25 +61,7 @@ func (nc *NewsController) GetNewsByTopicID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, topics)
 }
-func (nc *NewsController) SubscribeToTopic(c *gin.Context) {
-	var request struct {
-		UserID    uint   `json:"user_id"`
-		TopicName string `json:"topic_name"`
-	}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-
-	err := nc.NewsService.SubscribeUserToTopic(request.UserID, request.TopicName)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully subscribed to topic"})
-}
 func (nc *NewsController) GetSubscribedTopics(c *gin.Context) {
 
 	userIDStr := c.Param("user_id")
@@ -103,8 +85,6 @@ func (nc *NewsController) GetSubscribedTopics(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"subscribed_topics": topics})
 
 }
-
-
 func (nc *NewsController) SendEmails(c *gin.Context) {
 	users, err := nc.NewsService.GetUsers()
 	if err != nil {

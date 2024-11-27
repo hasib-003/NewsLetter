@@ -15,7 +15,6 @@ func RegisterNewsRoutes(r *gin.Engine) {
 	r.GET("/news", newsController.FetchNewsByTopic)
 	r.GET("/send-email", newsController.SendEmails)
 	r.GET("/topics/:id", newsController.GetNewsByTopicID)
-	r.POST("subscribe",newsController.SubscribeToTopic)
 	r.GET("/subscribed-topics/:user_id", newsController.GetSubscribedTopics)
 
 }
